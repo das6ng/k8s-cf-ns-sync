@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-cf-ns-sync
+  labels:
+    app: cf-ns-sync
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cf-ns-sync
+  template:
+    metadata:
+      labels:
+        app: cf-ns-sync
+    spec:
+      serviceAccountName: cf-ns-sync
+      containers:
+      - name: cf-ns-sync
+        image: dashyeah/cf-ns-sync:latest
+        imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: cf-ns-sync
+  name: cf-ns-sync
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ingress-watcher
+  labels:
+    app: cf-ns-sync
+rules:
+- apiGroups: ["","networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: watch-ingress
+  labels:
+    app: cf-ns-sync
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ingress-watcher
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: cf-ns-sync

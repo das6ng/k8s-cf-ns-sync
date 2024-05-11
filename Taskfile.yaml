@@ -1,0 +1,13 @@
+version: '3'
+
+tasks:
+
+  build:
+    desc: build container image
+    cmds:
+      - go build -o cf-ns-sync ./bin
+
+  img:
+    desc: build container image
+    cmds:
+      - nerdctl -n k8s.io build -t dashyeah/cf-ns-sync:{{default "latest" .VER}} .
