@@ -66,9 +66,5 @@ func sync2Cloudflare(ctx context.Context, name, val string) {
 		log.Fatal(err)
 	}
 	_ = api
-	// api.GetDNSRecord(ctx, &cloudflare.ResourceContainer{
-	// 	Level:      cloudflare.ZoneRouteLevel,
-	// 	Identifier: "",
-	// 	Type:       "A",
-	// })
+	api.ListDNSRecords(ctx, cloudflare.ZoneIdentifier("353f5ff351de364dcb62146ac5b05b5b"), cloudflare.ListDNSRecordsParams{})
 }
