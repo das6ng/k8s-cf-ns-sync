@@ -23,15 +23,15 @@ type IngressEvent struct {
 	Value string
 }
 
-func WatchIngress(ctx context.Context, ns string) (ev <-chan IngressEvent, err error) {
+func WatchIngress(ctx context.Context, ns string, ch chan<- IngressEvent) (err error) {
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
-		slog.Error("init InClusterConfig failed", "err", err)
+		slog.ErrorContext(ctx, "init InClusterConfig failed", "err", err)
 		return
 	}
 	cliSet, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		slog.Error("init client set failed", "err", err)
+		slog.ErrorContext(ctx, "init client set failed", "err", err)
 		return
 	}
 
@@ -39,13 +39,12 @@ func WatchIngress(ctx context.Context, ns string) (ev <-chan IngressEvent, err e
 		Watch: true,
 	})
 	if err != nil {
-		slog.Error("init watch failed", "err", err)
+		slog.ErrorContext(ctx, "init watch failed", "err", err)
 		return
 	}
 
-	ch := make(chan IngressEvent, 4)
-	ev = ch
-	go func() {
+	go func(ctx context.Context) {
+		slog.InfoContext(ctx, "start watching", "ns", ns)
 		for v := range watch.ResultChan() {
 			ing := v.Object.(*netv1.Ingress)
 			nsName := ing.Annotations[nsAnnotionNameKey]
@@ -53,7 +52,7 @@ func WatchIngress(ctx context.Context, ns string) (ev <-chan IngressEvent, err e
 			if nsName == "" || nsVal == "" {
 				continue
 			}
-			slog.Info("event comming", "type", v.Type, "obj_name", ing.Name, "annotions", ing.GetAnnotations())
+			slog.InfoContext(ctx, "event comming", "type", v.Type, "obj_name", ing.Name, "annotions", ing.GetAnnotations())
 			ch <- IngressEvent{
 				Type:  v.Type,
 				Name:  nsName,
@@ -61,6 +60,6 @@ func WatchIngress(ctx context.Context, ns string) (ev <-chan IngressEvent, err e
 				Value: nsVal,
 			}
 		}
-	}()
+	}(ctx)
 	return
 }

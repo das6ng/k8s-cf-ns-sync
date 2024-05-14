@@ -2,15 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"os"
+	"strings"
 
-	"github.com/cloudflare/cloudflare-go"
-	netv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"github.com/das6ng/cfnssync"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 func init() {
@@ -20,51 +17,26 @@ func init() {
 	})))
 }
 
-const (
-	nsAnnotionNameKey = "cf-ns-sync/name"
-	nsAnnotionValKey  = "cf-ns-sync/value"
-)
-
 func main() {
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		slog.Error("init InClusterConfig failed", "err", err)
-		return
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	nsList := strings.Split(strings.TrimSpace(os.Getenv("MONITOR_NS")), ",")
+	if len(nsList) == 0 {
+		slog.WarnContext(ctx, "no ns specified, will monitor 'default' ns")
+		nsList = append(nsList, "default")
 	}
-	cliSet, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		slog.Error("init client set failed", "err", err)
-		return
+	ch := make(chan cfnssync.IngressEvent, 3)
+	for _, ns := range nsList {
+		if err := cfnssync.WatchIngress(ctx, ns, ch); err != nil {
+			return
+		}
 	}
 
-	watch, err := cliSet.NetworkingV1().Ingresses("default").Watch(context.Background(), metav1.ListOptions{
-		Watch: true,
-	})
-	if err != nil {
-		slog.Error("init watch failed", "err", err)
-		return
-	}
-
-	for v := range watch.ResultChan() {
-		ing := v.Object.(*netv1.Ingress)
-		nsName := ing.Annotations[nsAnnotionNameKey]
-		nsVal := ing.Annotations[nsAnnotionValKey]
-		if nsName == "" || nsVal == "" {
+	for ev := range ch {
+		if ev.Type != watch.Added && ev.Type != watch.Modified {
 			continue
 		}
-		// ing.Spec.
-		slog.Warn("event comming", "type", v.Type, "obj_name", ing.Name, "annotions", ing.GetAnnotations())
+		cfnssync.Sync2Cloudflare(ctx, ev.Name, ev.Value)
 	}
-}
-
-func sync2Cloudflare(ctx context.Context, name, val string) {
-	// Construct a new API object using a global API key
-	api, err := cloudflare.New(os.Getenv("CLOUDFLARE_API_KEY"), os.Getenv("CLOUDFLARE_API_EMAIL"))
-	// alternatively, you can use a scoped API token
-	// api, err := cloudflare.NewWithAPIToken(os.Getenv("CLOUDFLARE_API_TOKEN"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	_ = api
-	api.ListDNSRecords(ctx, cloudflare.ZoneIdentifier("353f5ff351de364dcb62146ac5b05b5b"), cloudflare.ListDNSRecordsParams{})
 }
