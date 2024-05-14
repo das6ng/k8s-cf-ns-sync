@@ -2,29 +2,37 @@ package cfnssync
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestListDNS(t *testing.T) {
 	ctx := context.Background()
-	apiKey := os.Getenv("CLOUDFLARE_API_KEY")
-	zoneID := os.Getenv("CLOUDFLARE_ZONE_ID")
-	email := os.Getenv("CLOUDFLARE_EMAIL")
-	err := InitCloudflare(context.Background(), apiKey, email)
+	err := InitCloudflare(ctx)
 	assert.Nil(t, err)
-	// sync2Cloudflare()
-	rec, info, err := api.ListDNSRecords(ctx, cloudflare.ZoneIdentifier(zoneID), cloudflare.ListDNSRecordsParams{})
+
+	zid := cloudflare.ZoneIdentifier(cfZoneID)
+	rec, info, err := api.ListDNSRecords(ctx, zid, cloudflare.ListDNSRecordsParams{})
 	if err != nil {
-		t.Log("err:", err.Error())
+		t.Fatal("err:", err.Error())
 	}
-	t.Log(lo.Map(rec, func(r cloudflare.DNSRecord, _ int) string {
-		return fmt.Sprintf("%s/%s/%s", r.Type, r.Name, r.ZoneName)
-	}))
+
+	for _, r := range rec {
+		t.Logf("%s  %s  %s\n", r.Type, r.Name, r.ZoneName)
+	}
+	// t.Log(lo.Map(rec, func(r cloudflare.DNSRecord, _ int) string {
+	// 	return fmt.Sprintf("%s/%s/%s", r.Type, r.Name, r.ZoneName)
+	// }))
 	t.Logf("%d/%d", info.Count, info.Total)
+}
+
+func TestSyncDNS(t *testing.T) {
+	ctx := context.Background()
+	err := InitCloudflare(ctx)
+	require.NoError(t, err)
+
+	
 }
