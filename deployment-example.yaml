@@ -1,3 +1,18 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cf-ns-sync-secret
+  namespace: default
+type: Opaque
+# make SURE you've set these data to your own
+stringData:
+  # https://dash.cloudflare.com/profile/api-tokens
+  # the token MUST have the following Permissions on your target zone:
+  #     Zone    DNS    Read
+  #     Zone    DNS    Edit
+  CLOUDFLARE_API_TOKEN: <your own cloudflare api_token>
+  CLOUDFLARE_ZONE_NAME: <your own domain name>
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,9 +44,6 @@ spec:
           value: default
         envFrom:
         - secretRef:
-            # make SURE you've created this secret, it contains:
-            # CLOUDFLARE_API_TOKEN : your cloudflare api token
-            # CLOUDFLARE_ZONE_NAME : your domain name
             name: cf-ns-sync-secret
 ---
 apiVersion: v1

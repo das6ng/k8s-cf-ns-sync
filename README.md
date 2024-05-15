@@ -21,6 +21,13 @@ env vars:
 
 - `CLOUDFLARE_API_TOKEN`: cloudflare `api_token`
 
+    The [api token](https://dash.cloudflare.com/profile/api-tokens) *MUST* have the following `Permissions` on your target zone:
+
+    ```
+    Zone    DNS    Read
+    Zone    DNS    Edit
+    ```
+
 - `CLOUDFLARE_ZONE_NAME`: cloudflare managed DNS name
 
 # Ingress annotation
