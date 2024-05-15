@@ -20,6 +20,21 @@ spec:
       - name: cf-ns-sync
         image: dashyeah/cf-ns-sync:latest
         imagePullPolicy: IfNotPresent
+        env:
+        - name: LOG_LEVEL
+          value: WARN
+        - name: MONITOR_NS
+          value: default
+        - name: CLOUDFLARE_API_TOKEN
+          valueFrom:
+            secretRef:
+              name: cf-ns-sync-secret
+              key: CLOUDFLARE_API_TOKEN
+        - name: CLOUDFLARE_ZONE_NAME
+          valueFrom:
+            secretRef:
+              name: cf-ns-sync-secret
+              key: CLOUDFLARE_ZONE_NAME
 ---
 apiVersion: v1
 kind: ServiceAccount

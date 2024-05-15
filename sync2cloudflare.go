@@ -41,6 +41,10 @@ func InitCloudflare(ctx context.Context) error {
 
 func Sync2Cloudflare(ctx context.Context, name, content string) {
 	slog.InfoContext(ctx, "start sync to cloudflare", "name", name, "content", content)
+	if api == nil || cfZoneIdent == nil {
+		slog.ErrorContext(ctx, "cloudflare api not initilized")
+		return
+	}
 	if !strings.HasSuffix(name, cfZoneName) {
 		slog.InfoContext(ctx, "zone name not matched", "expect", cfZoneName, "got", name)
 		return

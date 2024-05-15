@@ -1,5 +1,5 @@
 # k8s-cf-ns-sync
-Simply sync NS record with k8s ingress resource annotion.
+Simply sync DNS record from k8s ingress resource annotion to cloudflare.com.
 
 # configuration
 

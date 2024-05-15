@@ -39,7 +39,7 @@ func WatchIngress(ctx context.Context, ns string, ch chan<- IngressEvent) (err e
 		Watch: true,
 	})
 	if err != nil {
-		slog.ErrorContext(ctx, "init watch failed", "err", err)
+		slog.ErrorContext(ctx, "init watch failed", "ns", ns, "err", err)
 		return
 	}
 

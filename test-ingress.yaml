@@ -3,7 +3,8 @@ kind: Ingress
 metadata:
   name: minimal-ingress
   annotations:
-    test-cf: a1223456
+    "cf-ns-sync/name": test01.abs.com
+    "cf-ns-sync/value": 191.168.1.99
 spec:
   ingressClassName: nginx-example
   rules:
