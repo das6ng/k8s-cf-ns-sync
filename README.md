@@ -2,6 +2,14 @@
 
 Simply sync DNS record from k8s ingress resource annotion to `cloudflare.com`.
 
+# Usage
+
+Deploy the image to your cluster, and give it authorization to "get/list/watch" your ingress 
+resources in the target namespaces.
+
+image: `ghcr.io/das6ng/k8s-cf-ns-sync:latest`
+deploy example: [link](https://github.com/das6ng/k8s-cf-ns-sync/blob/main/deployment-example.yaml)
+
 # Configuration
 
 env vars:
