@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-cf-ns-sync
+  name: cf-ns-sync
   labels:
     app: cf-ns-sync
   namespace: default
@@ -15,58 +15,57 @@ spec:
       labels:
         app: cf-ns-sync
     spec:
-      serviceAccountName: cf-ns-sync
+      serviceAccountName: cf-ns-sync-sa
       containers:
       - name: cf-ns-sync
-        image: dashyeah/cf-ns-sync:latest
+        image: ghcr.io/das6ng/k8s-cf-ns-sync:latest
         imagePullPolicy: IfNotPresent
         env:
         - name: LOG_LEVEL
-          value: WARN
+          # should be DEBUG/INFO/WARN/ERROR
+          value: INFO
         - name: MONITOR_NS
+          # namespaces to be monitored, comma separated
           value: default
-        - name: CLOUDFLARE_API_TOKEN
-          valueFrom:
-            secretRef:
-              name: cf-ns-sync-secret
-              key: CLOUDFLARE_API_TOKEN
-        - name: CLOUDFLARE_ZONE_NAME
-          valueFrom:
-            secretRef:
-              name: cf-ns-sync-secret
-              key: CLOUDFLARE_ZONE_NAME
+        envFrom:
+        - secretRef:
+            # make SURE you've created this secret, it contains:
+            # CLOUDFLARE_API_TOKEN : your cloudflare api token
+            # CLOUDFLARE_ZONE_NAME : your domain name
+            name: cf-ns-sync-secret
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
     app: cf-ns-sync
-  name: cf-ns-sync
+  name: cf-ns-sync-sa
   namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ingress-watcher
+  name: cf-ns-sync-ingress-watcher
   labels:
     app: cf-ns-sync
 rules:
-- apiGroups: ["","networking.k8s.io"]
+- apiGroups: ["networking.k8s.io"]
   resources: ["ingresses"]
   verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: watch-ingress
+  name: cf-ns-sync-watch-ingress
   labels:
     app: cf-ns-sync
   namespace: default
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: ingress-watcher
+  name: cf-ns-sync-ingress-watcher
+  apiGroup: rbac.authorization.k8s.io
 subjects:
-- apiGroup: ""
-  kind: ServiceAccount
-  name: cf-ns-sync
+- kind: ServiceAccount
+  name: cf-ns-sync-sa
+  apiGroup: ""
+  namespace: default

@@ -1,9 +1,12 @@
-# k8s-cf-ns-sync
-Simply sync DNS record from k8s ingress resource annotion to cloudflare.com.
+# Intro
 
-# configuration
+Simply sync DNS record from k8s ingress resource annotion to `cloudflare.com`.
+
+# Configuration
 
 env vars:
+
+- `LOG_LEVEL`: running log level, should be `DEBUG/INFO/WARN/ERROR`
 
 - `MONITOR_NS`: monitoring k8s namespaces
 
@@ -11,8 +14,23 @@ env vars:
 
 - `CLOUDFLARE_ZONE_NAME`: cloudflare managed DNS name
 
-# ingress annotation
+# Ingress annotation
 
 - `"cf-ns-sync/name"`: DNS A record name
 
 - `"cf-ns-sync/value"`: DNS A record content
+
+Example:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-ingress
+  annotations:
+    "cf-ns-sync/name": test01.abc.com
+    "cf-ns-sync/value": 191.168.1.99
+spec:
+  rules:
+  # ...
+```

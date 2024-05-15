@@ -10,4 +10,4 @@ tasks:
   img:
     desc: build container image
     cmds:
-      - nerdctl -n k8s.io build -t dashyeah/cf-ns-sync:{{default "latest" .VER}} .
+      - nerdctl -n k8s.io build -t ghcr.io/das6ng/k8s-cf-ns-sync:{{default "latest" .VER}} .
