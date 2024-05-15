@@ -8,6 +8,7 @@ Deploy the image to your cluster, and give it authorization to "get/list/watch" 
 resources in the target namespaces.
 
 image: `ghcr.io/das6ng/k8s-cf-ns-sync:latest`
+
 deploy example: [link](https://github.com/das6ng/k8s-cf-ns-sync/blob/main/deployment-example.yaml)
 
 # Configuration
