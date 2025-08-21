@@ -43,6 +43,7 @@ func (r *remoteStatus) CheckRemote(ctx context.Context) (err error) {
 	}
 	r.records = make(map[string]*cloudflare.DNSRecord, len(records))
 	for _, rec := range records {
+		slog.InfoContext(ctx, "got remote DNS record", "zone", r.zone, "name", rec.Name, "value", rec.Content)
 		r.records[rec.Name] = &rec
 	}
 	r.expire = time.Now().Add(5 * time.Minute)

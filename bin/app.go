@@ -90,6 +90,7 @@ func appMain(ctx context.Context, c *cli.Command) (err error) {
 
 	dnsEv := k8s.WatchIngress(ctx, clientset, nsEv)
 	for ev := range dnsEv {
+		slog.InfoContext(ctx, "in-cluster DNS record event", "ns", ev.NS, "name", ev.Name, "content", ev.Value, "event", ev.Type)
 		if ev.Type != k8s.EvAdded {
 			continue
 		}

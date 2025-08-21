@@ -58,6 +58,7 @@ func WatchNamespace(ctx context.Context, clientset *kubernetes.Clientset, exclud
 					if _, ok := ex[ns.Name]; !ok {
 						continue watchLoop
 					}
+					slog.InfoContext(ctx, "namespace change event", "ns", ns.Name, "event", e.Type)
 					switch e.Type {
 					case watch.Added:
 						notif <- Event{Type: EvAdded, Res: ResNamespace, Name: ns.Name}
