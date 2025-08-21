@@ -15,7 +15,7 @@ func init() {
 		logLv = slog.LevelWarn
 	}
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-		AddSource: logLv <= slog.LevelInfo,
+		AddSource: logLv == slog.LevelDebug || logLv == slog.LevelError,
 		Level:     logLv,
 	})))
 }
