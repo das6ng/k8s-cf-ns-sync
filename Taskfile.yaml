@@ -1,9 +1,8 @@
-version: '3'
+version: "3"
 
 tasks:
-
   build:
-    desc: build container image
+    desc: build binary
     cmds:
       - go build -o cf-ns-sync ./bin
 

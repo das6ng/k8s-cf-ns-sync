@@ -4,11 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"os"
-	"strings"
+	"path"
 
-	"github.com/das6ng/cfnssync"
 	"github.com/samber/lo"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 func init() {
@@ -25,30 +23,12 @@ func init() {
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	if err := cfnssync.InitCloudflare(ctx); err != nil {
-		slog.ErrorContext(ctx, "init cloudflare api fail", "err", err.Error())
-		return
+	arg0, _ := lo.First(os.Args)
+	if name := path.Base(arg0); name != "" {
+		app.Name = name
 	}
-
-	nsList := lo.Filter(strings.Split(strings.TrimSpace(os.Getenv("MONITOR_NS")), ","), func(s string, _ int) bool {
-		return s != ""
-	})
-	if len(nsList) == 0 {
-		slog.WarnContext(ctx, "no ns specified, will monitor 'default' ns")
-		nsList = append(nsList, "default")
-	}
-	ch := make(chan cfnssync.IngressEvent, 3)
-	for _, ns := range nsList {
-		if err := cfnssync.WatchIngress(ctx, ns, ch); err != nil {
-			return
-		}
-	}
-
-	for ev := range ch {
-		if ev.Type != watch.Added && ev.Type != watch.Modified {
-			continue
-		}
-		cfnssync.Sync2Cloudflare(ctx, ev.Name, ev.Value)
+	if err := app.Run(ctx, os.Args); err != nil {
+		slog.ErrorContext(ctx, "app run finished with error", "err", err.Error())
+		os.Exit(1)
 	}
 }

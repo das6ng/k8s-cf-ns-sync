@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS build
+FROM golang:1.25-alpine AS build
 WORKDIR /build-src
 COPY . .
 RUN go build -trimpath -o cf-ns-sync ./bin

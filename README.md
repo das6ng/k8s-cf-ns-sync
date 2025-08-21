@@ -11,15 +11,28 @@ image: `ghcr.io/das6ng/k8s-cf-ns-sync:latest`
 
 deploy example: [link](https://github.com/das6ng/k8s-cf-ns-sync/blob/main/deployment-example.yaml)
 
-# Configuration
+## Cli Flags
 
-env vars:
+```txt
+GLOBAL OPTIONS:
+   --mode string                          [exclude]|include (default: "exclude")
+   --exclude string [ --exclude string ]  monitor all namespace except specified by this flag (default: "kube-system", "kube-public", "kube-node-lease")
+   --include string [ --include string ]  monitor namespace specified by this flag (default: "default")
+   --cloudflare-zone string               DNS zone name managed by Cloudflare.com
+   --cloudflare-api-token string          api-token of Cloudflare.com, need ZONE-EDIT ZONE-READ access to specified Zone
+   --help, -h                             show help
+   --version, -v                          print the version
+```
 
-- `LOG_LEVEL`: running log level, should be `DEBUG/INFO/WARN/ERROR`
+- `--mode <mode>`: specify monitor `namespace` mode, can be either `exclude`(default) or `include`.
 
-- `MONITOR_NS`: monitoring k8s namespaces
+- `--exclude <namespace> [--exclude <namespace>]`: in `exclude` mode, monitor all namespace except specified by this flag (default: `kube-system`, `kube-public`, `kube-node-lease`).
 
-- `CLOUDFLARE_API_TOKEN`: cloudflare `api_token`
+- `--include <namespace> [--include <namespace>]`: in `include` mode, monitor namespace specified by this flag (default: `default`).
+
+- `--cloudflare-zone <zone_name>`: DNS zone name managed by [Cloudflare](https://cloudflare.com/)
+
+- `--cloudflare-api-token <api_token>`: cloudflare `api_token`
 
     The [api token](https://dash.cloudflare.com/profile/api-tokens) *MUST* have the following `Permissions` on your target zone:
 
@@ -28,9 +41,13 @@ env vars:
     Zone    DNS    Edit
     ```
 
-- `CLOUDFLARE_ZONE_NAME`: cloudflare managed DNS name
+## ENV vars
 
-# Ingress annotation
+
+- `LOG_LEVEL`: running log level, should be `DEBUG/INFO/WARN/ERROR`
+
+
+## Ingress annotation
 
 - `"cf-ns-sync/name"`: DNS A record name
 
