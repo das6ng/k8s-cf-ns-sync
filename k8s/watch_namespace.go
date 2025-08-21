@@ -13,6 +13,9 @@ import (
 )
 
 func WatchNamespace(ctx context.Context, clientset *kubernetes.Clientset, exclude ...string) (ev <-chan Event, err error) {
+	excluded := lo.SliceToMap(exclude, func(ns string) (string, struct{}) { return ns, struct{}{} })
+	slog.InfoContext(ctx, "excluded namespaces are", "excluded", lo.Keys(excluded), "exclude", exclude)
+
 	nsRes := clientset.CoreV1().Namespaces()
 	list, err1 := nsRes.List(ctx, apimetav1.ListOptions{})
 	if err1 != nil {
@@ -22,13 +25,10 @@ func WatchNamespace(ctx context.Context, clientset *kubernetes.Clientset, exclud
 	}
 	notif := make(chan Event, 8)
 	ev = notif
-	ex := lo.SliceToMap(exclude, func(ns string) (string, struct{}) {
-		return ns, struct{}{}
-	})
 
 	go func() {
 		for _, ns := range list.Items {
-			if _, ok := ex[ns.Name]; ok {
+			if _, ok := excluded[ns.Name]; ok {
 				continue
 			}
 			notif <- Event{Type: EvList, Res: ResNamespace, Name: ns.Name}
@@ -55,7 +55,7 @@ func WatchNamespace(ctx context.Context, clientset *kubernetes.Clientset, exclud
 					return
 				case e := <-evChan:
 					ns := e.Object.(*corev1.Namespace)
-					if _, ok := ex[ns.Name]; !ok {
+					if _, ok := excluded[ns.Name]; ok {
 						continue watchLoop
 					}
 					slog.InfoContext(ctx, "namespace change event", "ns", ns.Name, "event", e.Type)

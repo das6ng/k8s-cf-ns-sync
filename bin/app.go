@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var version = "v0.1.0"
+var version = "v0.1.1"
 
 var app = &cli.Command{
 	Name:    "cf-ns-sync",
