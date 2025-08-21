@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	nsAnnotionNameKey = "cf-ns-sync/name"
-	nsAnnotionValKey  = "cf-ns-sync/value"
+	annotionKeyName  = "cf-ns-sync/name"
+	annotionKeyValue = "cf-ns-sync/value"
 )
 
 type EvType string
