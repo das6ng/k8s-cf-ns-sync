@@ -64,7 +64,15 @@ func doWatchIng(ctx context.Context, clientset *kubernetes.Clientset, ns string,
 				slog.InfoContext(ctx, "watch ingress canceled by context", "ns", ns, "caused_by", cause.Error())
 				return
 			case e := <-evChan:
-				ing := e.Object.(*netv1.Ingress)
+				if e.Object == nil {
+					slog.WarnContext(ctx, "watch ingress got empty object", "ns", ns, "event", e.Type)
+					continue
+				}
+				ing, ok := e.Object.(*netv1.Ingress)
+				if !ok {
+					slog.WarnContext(ctx, "watch ingress got object not <*netv1.Ingress> type", "ns", ns, "event", e.Type)
+					continue
+				}
 				nsName := ing.Annotations[annotionKeyName]
 				nsVal := ing.Annotations[annotionKeyValue]
 				slog.InfoContext(ctx, "watch ingress event", "ns", ns, "ingress_name", ing.Name, "ns_name", nsName, "ns_value", nsVal, "event", e.Type)

@@ -54,7 +54,15 @@ func WatchNamespace(ctx context.Context, clientset *kubernetes.Clientset, exclud
 					close(notif)
 					return
 				case e := <-evChan:
-					ns := e.Object.(*corev1.Namespace)
+					if e.Object == nil {
+						slog.WarnContext(ctx, "watch namespace got empty object", "event", e.Type)
+						continue
+					}
+					ns, ok := e.Object.(*corev1.Namespace)
+					if !ok {
+						slog.WarnContext(ctx, "watch namespace got object not <*corev1.Namespace> type", "event", e.Type)
+						continue
+					}
 					if _, ok := excluded[ns.Name]; ok {
 						continue watchLoop
 					}
