@@ -30,6 +30,10 @@ func WatchIngress(ctx context.Context, clientset *kubernetes.Clientset, nsChan <
 			case e := <-nsChan:
 				switch e.Type {
 				case EvList, EvAdded:
+					if _, ok := cancelMap[e.Name]; ok {
+						slog.InfoContext(ctx, "already watching ingress in the namespace", "ns", e.Name)
+						continue
+					}
 					c1, cancel := context.WithCancelCause(ctx)
 					cancelMap[e.Name] = cancel
 					go doWatchIng(c1, clientset, e.Name, notif)
