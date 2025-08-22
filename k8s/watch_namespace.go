@@ -46,6 +46,7 @@ func WatchNamespace(ctx context.Context, clientset *kubernetes.Clientset, exclud
 				continue
 			}
 			evChan := ev.ResultChan()
+			slog.InfoContext(ctx, "watching namespace event")
 		watchLoop:
 			for {
 				select {
@@ -55,8 +56,8 @@ func WatchNamespace(ctx context.Context, clientset *kubernetes.Clientset, exclud
 					return
 				case e := <-evChan:
 					if e.Object == nil {
-						slog.WarnContext(ctx, "watch namespace got empty object", "event", e.Type)
-						continue
+						slog.WarnContext(ctx, "watch namespace got empty object, will retry watch", "event", e.Type)
+						break watchLoop
 					}
 					ns, ok := e.Object.(*corev1.Namespace)
 					if !ok {
@@ -73,11 +74,11 @@ func WatchNamespace(ctx context.Context, clientset *kubernetes.Clientset, exclud
 					case watch.Deleted:
 						notif <- Event{Type: EvDeleted, Res: ResNamespace, Name: ns.Name}
 					case "":
+						slog.WarnContext(ctx, "watch namespcace got empty event type, will retry watch")
 						break watchLoop
 					}
 				}
 			}
-			slog.WarnContext(ctx, "watch namespcace got empty event type, will retry watch")
 			ev.Stop()
 			time.Sleep(100 * time.Millisecond)
 		}

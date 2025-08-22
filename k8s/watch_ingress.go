@@ -57,6 +57,7 @@ func doWatchIng(ctx context.Context, clientset *kubernetes.Clientset, ns string,
 		}
 		slog.InfoContext(ctx, "start watching ingress", "ns", ns)
 		evChan := ev.ResultChan()
+	watchLoop:
 		for {
 			select {
 			case <-ctx.Done():
@@ -65,8 +66,8 @@ func doWatchIng(ctx context.Context, clientset *kubernetes.Clientset, ns string,
 				return
 			case e := <-evChan:
 				if e.Object == nil {
-					slog.WarnContext(ctx, "watch ingress got empty object", "ns", ns, "event", e.Type)
-					continue
+					slog.WarnContext(ctx, "watch ingress got empty object, will retry watch", "ns", ns, "event", e.Type)
+					break watchLoop
 				}
 				ing, ok := e.Object.(*netv1.Ingress)
 				if !ok {
@@ -84,8 +85,13 @@ func doWatchIng(ctx context.Context, clientset *kubernetes.Clientset, ns string,
 					notif <- Event{Type: EvAdded, Res: ResDNSRecord, Name: nsName, Value: nsVal, NS: ns}
 				case watch.Deleted:
 					notif <- Event{Type: EvDeleted, Res: ResDNSRecord, Name: nsName, Value: nsVal, NS: ns}
+				case "":
+					slog.WarnContext(ctx, "watch ingress got empty event type, will retry watch")
+					break watchLoop
 				}
 			}
 		}
+		ev.Stop()
+		time.Sleep(100 * time.Millisecond)
 	}
 }
