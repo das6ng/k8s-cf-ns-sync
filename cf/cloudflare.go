@@ -14,11 +14,12 @@ type remoteStatus struct {
 	api    *cloudflare.API
 	ident  *cloudflare.ResourceContainer
 
-	records map[string]*cloudflare.DNSRecord
-	expire  time.Time
+	records      map[string]*cloudflare.DNSRecord
+	expire       time.Time
+	pullInterval time.Duration
 }
 
-func NewZone(ctx context.Context, zone, apiToken string) (remote *remoteStatus, err error) {
+func NewZone(ctx context.Context, zone, apiToken, pullInterval string) (remote *remoteStatus, err error) {
 	remote = &remoteStatus{zone: zone}
 	remote.api, err = cloudflare.NewWithAPIToken(apiToken)
 	if err != nil {
@@ -29,6 +30,10 @@ func NewZone(ctx context.Context, zone, apiToken string) (remote *remoteStatus, 
 		return
 	}
 	remote.ident = cloudflare.ZoneIdentifier(remote.zoneID)
+	remote.pullInterval, err = time.ParseDuration(pullInterval)
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -46,7 +51,7 @@ func (r *remoteStatus) CheckRemote(ctx context.Context) (err error) {
 		slog.InfoContext(ctx, "got remote DNS record", "zone", r.zone, "name", rec.Name, "value", rec.Content)
 		r.records[rec.Name] = &rec
 	}
-	r.expire = time.Now().Add(5 * time.Minute)
+	r.expire = time.Now().Add(r.pullInterval)
 	return
 }
 

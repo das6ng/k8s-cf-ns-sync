@@ -12,7 +12,16 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var version = "v0.1.6"
+var version = "v0.1.7"
+
+const (
+	flagMode                   = "mode"
+	flagExclude                = "exclude"
+	flagInclude                = "include"
+	flagCloudflareZone         = "cloudflare-zone"
+	flagCloudflareAPIToken     = "cloudflare-api-token"
+	flagCloudflarePullInterval = "cloudflare-pull-interval"
+)
 
 var app = &cli.Command{
 	Name:    "cf-ns-sync",
@@ -22,7 +31,7 @@ var app = &cli.Command{
 	Authors: []any{"Dash Wong [dashengyeah@hotmail.com]"},
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "mode",
+			Name:  flagMode,
 			Value: "exclude",
 			Usage: "[exclude]|include",
 			Validator: func(s string) error {
@@ -32,41 +41,47 @@ var app = &cli.Command{
 			},
 		},
 		&cli.StringSliceFlag{
-			Name:  "exclude",
+			Name:  flagExclude,
 			Value: []string{"kube-system", "kube-public", "kube-node-lease"},
 			Usage: "monitor all namespace except specified by this flag",
 		},
 		&cli.StringSliceFlag{
-			Name:  "include",
+			Name:  flagInclude,
 			Value: []string{"default"},
 			Usage: "monitor namespace specified by this flag",
 		},
 		&cli.StringFlag{
-			Name:     "cloudflare-zone",
+			Name:     flagCloudflareZone,
 			Required: true,
 			Usage:    "DNS zone name managed by Cloudflare.com",
 		},
 		&cli.StringFlag{
-			Name:     "cloudflare-api-token",
+			Name:     flagCloudflareAPIToken,
 			Required: true,
 			Usage:    "api-token of Cloudflare.com, need ZONE-EDIT ZONE-READ access to specified Zone",
+		},
+		&cli.StringFlag{
+			Name:  flagCloudflarePullInterval,
+			Value: "10m",
+			Usage: "pull remote cloudflare DNS name list interval (5s/2m3s/3h..., default:10m)",
 		},
 	},
 }
 
 func appMain(ctx context.Context, c *cli.Command) (err error) {
-	cfZone := c.String("cloudflare-zone")
-	cfToken := c.String("cloudflare-api-token")
-	cfStatus, err := cf.NewZone(ctx, cfZone, cfToken)
+	cfZone := c.String(flagCloudflareZone)
+	cfToken := c.String(flagCloudflareAPIToken)
+	pullInterval := c.String(flagCloudflarePullInterval)
+	cfStatus, err := cf.NewZone(ctx, cfZone, cfToken, pullInterval)
 	if err != nil {
 		slog.ErrorContext(ctx, "connect to cloudflare failed", "zone", cfZone, "err", err.Error())
 		os.Exit(1)
 	}
 
-	excludeNameSpaces := c.StringSlice("exclude")
+	excludeNameSpaces := c.StringSlice(flagExclude)
 	clientset, err := k8s.NewClientSet(ctx)
 	var nsEv <-chan k8s.Event
-	switch c.String("mode") {
+	switch c.String(flagMode) {
 	case "exclude":
 		nsEv, err = k8s.WatchNamespace(ctx, clientset, excludeNameSpaces...)
 		if err != nil {
@@ -74,7 +89,7 @@ func appMain(ctx context.Context, c *cli.Command) (err error) {
 			os.Exit(1)
 		}
 	case "include":
-		nsList := c.StringSlice("include")
+		nsList := c.StringSlice(flagInclude)
 		ev := make(chan k8s.Event, 2)
 		nsEv = ev
 		go func() {
